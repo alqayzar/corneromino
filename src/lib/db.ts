@@ -1,5 +1,5 @@
 import { openDB } from 'idb'
-import type { GameMode } from '@/game/placement'
+import type { GameMode } from '@/game/gameConfig'
 
 export interface StoredGame {
   id: string

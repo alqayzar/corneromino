@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import type { CellCorner, GameConfig, GameMode, PlacedTetromino, PlacedTetrominoCell } from '@/game/placement'
+import type { CellCorner, GameConfig, GameMode, PlacedTetromino, PlacedTetrominoCell } from '@/game/gameConfig'
 import { loadGameSelection, saveGameSelection } from '@/lib/db'
 import { cn } from '@/lib/utils'
 

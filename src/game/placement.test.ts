@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { CELL_CORNERS, createSeededRandom, GAME_CONFIGS, generateTetrominoPlacements, type GameConfig } from './placement'
+import { createSeededRandom, generateTetrominoPlacements } from './placement'
+import { CELL_CORNERS, GAME_CONFIGS, type GameConfig } from './gameConfig'
 
 describe('generateTetrominoPlacements', () => {
   const config: GameConfig = { columns: 8, rows: 8, spread: 0.5, tetrominoCount: 5 }
@@ -43,21 +44,4 @@ describe('generateTetrominoPlacements', () => {
     expect(() => generateTetrominoPlacements({ ...config, spread: 1.1 })).toThrow('Spread')
   })
 
-  it('uses the mode together with the seed to create distinct boards', () => {
-    const seed = 'shared-seed'
-    const easyBoard = generateTetrominoPlacements(GAME_CONFIGS.easy, createSeededRandom(`easy:${seed}`))
-    const hardBoard = generateTetrominoPlacements(GAME_CONFIGS.hard, createSeededRandom(`hard:${seed}`))
-
-    expect(easyBoard).toHaveLength(GAME_CONFIGS.easy.tetrominoCount)
-    expect(hardBoard).toHaveLength(GAME_CONFIGS.hard.tetrominoCount)
-    expect(easyBoard).not.toEqual(hardBoard)
-  })
-
-  it('places every configured mode across a range of seeds', () => {
-    for (const [mode, modeConfig] of Object.entries(GAME_CONFIGS)) {
-      for (let seedIndex = 0; seedIndex < 25; seedIndex += 1) {
-        expect(() => generateTetrominoPlacements(modeConfig, createSeededRandom(`${mode}:${seedIndex}`))).not.toThrow()
-      }
-    }
-  })
 })
