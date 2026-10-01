@@ -3,17 +3,26 @@ import { createTetrominoCells, TETROMINOES, TETROMINO_KINDS, type CellId, type T
 export interface GameConfig {
   columns: number
   rows: number
+  /** 0 uses the full board; 1 strongly favors placements around its center. */
+  spread: number
   tetrominoCount: number
+}
+
+export const GAME_MODES = ['easy', 'medium', 'hard'] as const
+export type GameMode = (typeof GAME_MODES)[number]
+
+export const GAME_CONFIGS = {
+  easy: { columns: 8, rows: 8, spread: 1, tetrominoCount: 5 },
+  medium: { columns: 10, rows: 15, spread: 0.5, tetrominoCount: 25 },
+  hard: { columns: 12, rows: 18, spread: 0.8, tetrominoCount: 35 },
+} as const satisfies Record<GameMode, GameConfig>
+
+export function isGameMode(value: string | null): value is GameMode {
+  return GAME_MODES.some((mode) => mode === value)
 }
 
 export const CELL_CORNERS = ['top-left', 'top-right', 'bottom-right', 'bottom-left'] as const
 export type CellCorner = (typeof CELL_CORNERS)[number]
-
-export const DEFAULT_GAME_CONFIG: Readonly<GameConfig> = {
-  columns: 10,
-  rows: 15,
-  tetrominoCount: 25,
-}
 
 export interface PlacedTetrominoCell {
   cellId: CellId
@@ -64,13 +73,24 @@ function shuffleCorners(random: () => number): CellCorner[] {
   return corners
 }
 
-function validateConfig({ columns, rows, tetrominoCount }: GameConfig): void {
+function createOffset(maxOffset: number, spread: number, random: () => number): number {
+  const uniformOffset = random() * maxOffset
+  const centerOffset = maxOffset / 2
+  const compactedOffset = centerOffset + (uniformOffset - centerOffset) * (1 - spread)
+  return Math.round(compactedOffset)
+}
+
+function validateConfig({ columns, rows, spread, tetrominoCount }: GameConfig): void {
   if (!Number.isInteger(columns) || !Number.isInteger(rows) || columns < 1 || rows < 1) {
     throw new Error('Board columns and rows must be positive integers.')
   }
 
   if (!Number.isInteger(tetrominoCount) || tetrominoCount < 0) {
     throw new Error('Tetromino count must be a non-negative integer.')
+  }
+
+  if (!Number.isFinite(spread) || spread < 0 || spread > 1) {
+    throw new Error('Spread must be a number between 0 and 1.')
   }
 }
 
@@ -79,7 +99,7 @@ function validateConfig({ columns, rows, tetrominoCount }: GameConfig): void {
  * will occupy the same coordinate.
  */
 export function generateTetrominoPlacements(
-  config: GameConfig = DEFAULT_GAME_CONFIG,
+  config: GameConfig,
   random: () => number = Math.random,
 ): PlacedTetromino[] {
   validateConfig(config)
@@ -87,6 +107,9 @@ export function generateTetrominoPlacements(
   const occupied = new Set<string>()
   const placements: PlacedTetromino[] = []
   const attemptsPerPiece = 500
+  // Center bias establishes the opening layout, then full-board attempts keep
+  // dense, high-spread games from repeatedly targeting an already full center.
+  const centeredAttemptsPerPiece = 32
 
   for (let id = 1; id <= config.tetrominoCount; id += 1) {
     let placement: PlacedTetromino | undefined
@@ -100,8 +123,9 @@ export function generateTetrominoPlacements(
 
       if (width > config.columns || height > config.rows) continue
 
-      const offsetX = Math.floor(random() * (config.columns - width + 1))
-      const offsetY = Math.floor(random() * (config.rows - height + 1))
+      const attemptSpread = attempt < centeredAttemptsPerPiece ? config.spread : 0
+      const offsetX = createOffset(config.columns - width, attemptSpread, random)
+      const offsetY = createOffset(config.rows - height, attemptSpread, random)
       const corners = shuffleCorners(random)
       const cells = localCells.map(({ id: cellId, x, y }, index) => ({
         cellId,

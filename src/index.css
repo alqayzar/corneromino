@@ -1,4 +1,8 @@
 @import "tailwindcss";
+@import "@fontsource/poppins/latin-400.css";
+@import "@fontsource/poppins/latin-700.css";
+@import "@fontsource/poppins/latin-800.css";
+@import "@fontsource/poppins/latin-900.css";
 
 @font-face {
   font-family: 'Abbots Morton Spaceport Mono';
@@ -20,7 +24,7 @@
 
 :root {
   color-scheme: light;
-  font-family: 'Abbots Morton Spaceport Mono', monospace;
+  font-family: 'Poppins', ui-sans-serif, system-ui, sans-serif;
   --background: var(--canvas);
   --foreground: var(--text-color);
   --card: var(--paper);
@@ -46,7 +50,7 @@
 }
 
 @theme inline {
-  --font-sans: 'Abbots Morton Spaceport Mono', monospace;
+  --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -71,8 +75,8 @@
     @apply bg-background text-foreground;
     margin: 0;
     min-width: 320px;
-    -webkit-font-smoothing: none;
-    -moz-osx-font-smoothing: unset;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   button:not(:disabled) {
@@ -125,8 +129,49 @@
   height: var(--element-shadow-depth);
 }
 
+.tetromino-motion {
+  will-change: translate;
+}
+
+@keyframes tetromino-drift-right {
+  to {
+    translate: calc(100vw + 220px) 0;
+  }
+}
+
+@keyframes tetromino-drift-left {
+  to {
+    translate: calc(-100vw - 220px) 0;
+  }
+}
+
+@keyframes tetromino-drift-down {
+  to {
+    translate: 0 calc(100dvh + 220px);
+  }
+}
+
+@keyframes tetromino-drift-up {
+  to {
+    translate: 0 calc(-100dvh - 220px);
+  }
+}
+
+.animate-tetromino-drift-right-fast { animation: tetromino-drift-right 16s linear forwards; }
+.animate-tetromino-drift-right-slow { animation: tetromino-drift-right 24s linear forwards; }
+.animate-tetromino-drift-left-fast { animation: tetromino-drift-left 16s linear forwards; }
+.animate-tetromino-drift-left-slow { animation: tetromino-drift-left 24s linear forwards; }
+.animate-tetromino-drift-down-fast { animation: tetromino-drift-down 16s linear forwards; }
+.animate-tetromino-drift-down-slow { animation: tetromino-drift-down 24s linear forwards; }
+.animate-tetromino-drift-up-fast { animation: tetromino-drift-up 16s linear forwards; }
+.animate-tetromino-drift-up-slow { animation: tetromino-drift-up 24s linear forwards; }
+
 @media (prefers-reduced-motion: reduce) {
   .cartoon-press {
     transition: none !important;
+  }
+
+  .tetromino-motion {
+    animation: none !important;
   }
 }

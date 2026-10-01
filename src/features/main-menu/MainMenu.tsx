@@ -7,8 +7,8 @@ export function MainMenu() {
     <main className="relative grid min-h-dvh place-items-center overflow-hidden bg-[var(--canvas)] px-5 py-8 text-[var(--canvas-foreground)]">
       <TetrominoBackground />
       <section className="relative z-10 flex w-full max-w-[380px] flex-col items-center gap-4 text-center">
-        <h1 className="mb-4 text-[55px] leading-none font-black tracking-[-0.055em] sm:text-[66px]">
-          Cornermino
+        <h1 className="mb-4 text-[33px] leading-none font-black tracking-[-0.055em] min-[375px]:text-[44px] sm:text-[55px]">
+          Corneromino
         </h1>
         <Button
           asChild

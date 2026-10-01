@@ -11,26 +11,28 @@ const CELL_COLOR_CLASSES = {
   d: 'bg-[var(--paper)]',
 } as const
 
-const GRID_COLUMN_CLASSES = { 1: 'grid-cols-1', 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4' } as const
-const GRID_ROW_CLASSES = { 1: 'grid-rows-1', 2: 'grid-rows-2', 3: 'grid-rows-3', 4: 'grid-rows-4' } as const
-const GRID_COLUMN_START_CLASSES = { 0: 'col-start-1', 1: 'col-start-2', 2: 'col-start-3', 3: 'col-start-4' } as const
-const GRID_ROW_START_CLASSES = { 0: 'row-start-1', 1: 'row-start-2', 2: 'row-start-3', 3: 'row-start-4' } as const
-
-function TetrominoPreview({ rotation }: { rotation: TetrominoRotation }) {
-  const width = Math.max(...rotation.cells.map((cell) => cell.x)) + 1
-  const height = Math.max(...rotation.cells.map((cell) => cell.y)) + 1
+function TetrominoPreview(props: { rotation: TetrominoRotation }) {
+  const width = Math.max(...props.rotation.cells.map((cell) => cell.x)) + 1
+  const height = Math.max(...props.rotation.cells.map((cell) => cell.y)) + 1
 
   return (
-    <div aria-label={`Rotation ${rotation.turns * 90} degrees`} className={cn('inline-grid gap-0.5', GRID_COLUMN_CLASSES[width as 1 | 2 | 3 | 4], GRID_ROW_CLASSES[height as 1 | 2 | 3 | 4])} role="img">
-      {rotation.cells.map((cell) => (
+    <div
+      aria-label={`Rotation ${props.rotation.turns * 90} degrees`}
+      className="inline-grid gap-0.5"
+      role="img"
+      style={{
+        gridTemplateColumns: `repeat(${width}, 22px)`,
+        gridTemplateRows: `repeat(${height}, 22px)`,
+      }}
+    >
+      {props.rotation.cells.map((cell) => (
         <span
           className={cn(
             'size-[22px] border-2 border-[var(--outline-color)]',
             CELL_COLOR_CLASSES[cell.id],
-            GRID_COLUMN_START_CLASSES[cell.x as 0 | 1 | 2 | 3],
-            GRID_ROW_START_CLASSES[cell.y as 0 | 1 | 2 | 3],
           )}
           key={cell.id}
+          style={{ gridColumn: cell.x + 1, gridRow: cell.y + 1 }}
         />
       ))}
     </div>

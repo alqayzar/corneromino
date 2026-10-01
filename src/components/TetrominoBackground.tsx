@@ -1,84 +1,109 @@
+import { useEffect, useState } from 'react'
 import { TETROMINOES, TETROMINO_KINDS, type TetrominoRotation } from '@/game/tetrominoes'
 import { cn } from '@/lib/utils'
 
-const DECORATION_POSITION_OPTIONS = [
-  'left-[2%] top-[3%]',
-  'left-[19%] top-[11%]',
-  'left-[38%] top-[4%]',
-  'left-[57%] top-[16%]',
-  'left-[79%] top-[5%]',
-  'right-[2%] top-[26%]',
-  'left-[5%] top-[29%]',
-  'left-[27%] top-[35%]',
-  'left-[48%] top-[28%]',
-  'left-[68%] top-[40%]',
-  'right-[8%] top-[49%]',
-  'left-[1%] top-[55%]',
-  'left-[20%] top-[61%]',
-  'left-[41%] top-[53%]',
-  'left-[61%] top-[66%]',
-  'right-[3%] top-[72%]',
-  'bottom-[4%] left-[5%]',
-  'bottom-[13%] left-[26%]',
-  'bottom-[4%] left-[47%]',
-  'bottom-[16%] right-[27%]',
-  'bottom-[5%] right-[6%]',
+const HORIZONTAL_POSITIONS = [
+  'top-[4%]',
+  'top-[18%]',
+  'top-[32%]',
+  'top-[46%]',
+  'top-[60%]',
+  'top-[74%]',
+  'top-[88%]',
 ] as const
 
-const DECORATION_COLORS = ['bg-[var(--paper)]'] as const
-const GRID_COLUMN_START_CLASSES = { 0: 'col-start-1', 1: 'col-start-2', 2: 'col-start-3', 3: 'col-start-4' } as const
-const GRID_ROW_START_CLASSES = { 0: 'row-start-1', 1: 'row-start-2', 2: 'row-start-3', 3: 'row-start-4' } as const
-const DECORATION_COUNT = 16
+const VERTICAL_POSITIONS = [
+  'left-[3%]',
+  'left-[17%]',
+  'left-[31%]',
+  'left-[45%]',
+  'left-[59%]',
+  'left-[73%]',
+  'left-[87%]',
+] as const
 
-interface Decoration {
-  colorClass: (typeof DECORATION_COLORS)[number]
+const INITIAL_DECORATION_COUNT = 10
+const SPAWN_INTERVAL_MS = 1_500
+
+interface Motion {
+  className: string
+  lifetimeMs: number
+  positionClasses: readonly string[]
+  startClass: string
+}
+
+const MOTIONS: readonly Motion[] = [
+  { className: 'animate-tetromino-drift-right-fast', lifetimeMs: 16_000, positionClasses: HORIZONTAL_POSITIONS, startClass: 'left-[-110px]' },
+  { className: 'animate-tetromino-drift-right-slow', lifetimeMs: 24_000, positionClasses: HORIZONTAL_POSITIONS, startClass: 'left-[-110px]' },
+  { className: 'animate-tetromino-drift-left-fast', lifetimeMs: 16_000, positionClasses: HORIZONTAL_POSITIONS, startClass: 'right-[-110px]' },
+  { className: 'animate-tetromino-drift-left-slow', lifetimeMs: 24_000, positionClasses: HORIZONTAL_POSITIONS, startClass: 'right-[-110px]' },
+  { className: 'animate-tetromino-drift-down-fast', lifetimeMs: 16_000, positionClasses: VERTICAL_POSITIONS, startClass: 'top-[-110px]' },
+  { className: 'animate-tetromino-drift-down-slow', lifetimeMs: 24_000, positionClasses: VERTICAL_POSITIONS, startClass: 'top-[-110px]' },
+  { className: 'animate-tetromino-drift-up-fast', lifetimeMs: 16_000, positionClasses: VERTICAL_POSITIONS, startClass: 'bottom-[-110px]' },
+  { className: 'animate-tetromino-drift-up-slow', lifetimeMs: 24_000, positionClasses: VERTICAL_POSITIONS, startClass: 'bottom-[-110px]' },
+]
+
+interface MovingDecoration {
+  createdAt: number
   id: string
+  motionClass: string
+  lifetimeMs: number
   positionClass: string
   rotation: TetrominoRotation
+  startClass: string
 }
 
 function getRandomItem<T>(items: readonly T[]): T {
   return items[Math.floor(Math.random() * items.length)]
 }
 
-function shuffle<T>(items: readonly T[]): T[] {
-  const shuffledItems = [...items]
-
-  for (let index = shuffledItems.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1))
-    ;[shuffledItems[index], shuffledItems[swapIndex]] = [shuffledItems[swapIndex], shuffledItems[index]]
-  }
-
-  return shuffledItems
-}
-
-const DECORATION_POSITIONS = shuffle(DECORATION_POSITION_OPTIONS).slice(0, DECORATION_COUNT)
-
-const DECORATIONS: readonly Decoration[] = DECORATION_POSITIONS.map((positionClass, index) => {
+function createDecoration(): MovingDecoration {
   const kind = getRandomItem(TETROMINO_KINDS)
+  const motion = getRandomItem(MOTIONS)
 
   return {
-    colorClass: getRandomItem(DECORATION_COLORS),
-    id: `decoration-${index + 1}`,
-    positionClass,
+    createdAt: Date.now(),
+    id: crypto.randomUUID(),
+    motionClass: motion.className,
+    lifetimeMs: motion.lifetimeMs,
+    positionClass: getRandomItem(motion.positionClasses),
     rotation: getRandomItem(TETROMINOES[kind].rotations),
+    startClass: motion.startClass,
   }
-})
+}
+
+function createInitialDecorations(): MovingDecoration[] {
+  return Array.from({ length: INITIAL_DECORATION_COUNT }, createDecoration)
+}
 
 export function TetrominoBackground() {
+  const [decorations, setDecorations] = useState(createInitialDecorations)
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      const now = Date.now()
+      setDecorations((currentDecorations) => [
+        ...currentDecorations.filter((decoration) => now - decoration.createdAt < decoration.lifetimeMs),
+        createDecoration(),
+      ])
+    }, SPAWN_INTERVAL_MS)
+
+    return () => {
+      window.clearInterval(intervalId)
+    }
+  }, [])
+
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden opacity-[0.2]">
-      {DECORATIONS.map(({ colorClass, id, positionClass, rotation }) => (
-        <div className={cn('absolute inline-grid grid-cols-4 grid-rows-4 gap-0.5', positionClass)} key={id}>
+      {decorations.map(({ id, motionClass, positionClass, rotation, startClass }) => (
+        <div className={cn('tetromino-motion absolute inline-grid grid-cols-4 grid-rows-4 gap-0.5', motionClass, positionClass, startClass)} key={id}>
           {rotation.cells.map((cell) => (
             <span
               className={cn(
-                'size-[22px] border-2 border-[var(--outline-color)]',
-                colorClass,
-                GRID_COLUMN_START_CLASSES[cell.x as 0 | 1 | 2 | 3],
-                GRID_ROW_START_CLASSES[cell.y as 0 | 1 | 2 | 3],
+                'size-[22px] border-2 border-[var(--outline-color)] bg-[var(--paper)]',
               )}
               key={cell.id}
+              style={{ gridColumn: cell.x + 1, gridRow: cell.y + 1 }}
             />
           ))}
         </div>

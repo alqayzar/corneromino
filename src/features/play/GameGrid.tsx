@@ -1,40 +1,22 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import type { GameConfig, PlacedTetromino, PlacedTetrominoCell } from '@/game/placement'
+import type { CellCorner, GameConfig, GameMode, PlacedTetromino, PlacedTetrominoCell } from '@/game/placement'
 import { loadGameSelection, saveGameSelection } from '@/lib/db'
 import { cn } from '@/lib/utils'
 
 interface GameGridProps {
   config: GameConfig
   gameId: string
+  gameMode: GameMode
   pieces: readonly PlacedTetromino[]
 }
 
 const CORNER_POSITION_CLASSES = {
-  'top-left': 'left-1 top-1',
-  'top-right': 'right-1 top-1',
-  'bottom-right': 'bottom-1 right-1',
-  'bottom-left': 'bottom-1 left-1',
+  'top-left': 'left-[7%] top-[7%]',
+  'top-right': 'right-[7%] top-[7%]',
+  'bottom-right': 'bottom-[7%] right-[7%]',
+  'bottom-left': 'bottom-[7%] left-[7%]',
 } as const
-
-const GRID_COLUMN_CLASSES: Record<number, string> = {
-  1: 'grid-cols-1',
-  2: 'grid-cols-2',
-  3: 'grid-cols-3',
-  4: 'grid-cols-4',
-  5: 'grid-cols-5',
-  6: 'grid-cols-6',
-  7: 'grid-cols-7',
-  8: 'grid-cols-8',
-  9: 'grid-cols-9',
-  10: 'grid-cols-10',
-  11: 'grid-cols-11',
-  12: 'grid-cols-12',
-  13: 'grid-cols-13',
-  14: 'grid-cols-14',
-  15: 'grid-cols-15',
-  16: 'grid-cols-16',
-}
 
 function createCellMap(pieces: readonly PlacedTetromino[]): Map<string, PlacedTetromino> {
   return new Map(pieces.flatMap((piece) => piece.cells.map((cell) => [`${cell.x},${cell.y}`, piece])))
@@ -51,56 +33,63 @@ interface GameGridCellProps {
   onToggle?: (cellKey: string) => void
 }
 
-export function GameGridCell({ cell, className, piece, selected, showId, x, y, onToggle }: GameGridCellProps) {
-  const cellKey = `${x},${y}`
+function CornerMarker(props: { corner: CellCorner }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        'absolute size-1/2 rounded-[10%] bg-[var(--outline-color)]',
+        CORNER_POSITION_CLASSES[props.corner],
+      )}
+    />
+  )
+}
+
+export function GameGridCell(props: GameGridCellProps) {
+  const cellKey = `${props.x},${props.y}`
   const cellClasses = cn(
-    'relative flex items-center justify-center border-2 border-[var(--outline-color)] bg-[var(--paper-muted)] text-[11px] font-bold text-[var(--text-color)]',
-    selected && 'ring-6 ring-[var(--coral)]',
-    className,
+    'relative flex items-center justify-center rounded-[5%] border-2 border-[var(--outline-color)] bg-[var(--paper-muted)] text-[11px] font-bold text-[var(--text-color)]',
+    props.selected && 'ring-6 ring-[var(--coral)] ring-inset',
+    props.className,
   )
 
   function toggleSelection() {
-    onToggle?.(cellKey)
+    props.onToggle?.(cellKey)
   }
 
-  if (!onToggle) {
+
+  if (!props.onToggle) {
     return (
       <div className={cellClasses}>
-        {showId && piece ? `#${piece.id}` : ''}
-        {cell && <span aria-hidden="true" className={`absolute size-2 rounded-sm bg-[var(--outline-color)] ${CORNER_POSITION_CLASSES[cell.corner]}`} />}
+        {props.showId && props.piece && <span className="relative z-10 text-[#ffd23f] [-webkit-text-stroke:1px_var(--outline-color)]">#{props.piece.id}</span>}
+        {props.cell && <CornerMarker corner={props.cell.corner} />}
       </div>
     )
   }
 
   return (
     <button
-      aria-label={`Cell ${x + 1}, ${y + 1}`}
-      aria-pressed={selected}
+      aria-label={`Cell ${props.x + 1}, ${props.y + 1}`}
+      aria-pressed={props.selected}
       className={cn(cellClasses, 'aspect-square p-0')}
       onClick={toggleSelection}
       type="button"
     >
-      {showId && piece ? `#${piece.id}` : ''}
-      {cell && <span aria-hidden="true" className={`absolute size-2 rounded-sm bg-[var(--outline-color)] ${CORNER_POSITION_CLASSES[cell.corner]}`} />}
+      {props.showId && props.piece && <span className="relative z-10 text-[#ffd23f] [-webkit-text-stroke:1px_var(--outline-color)]">#{props.piece.id}</span>}
+      {props.cell && <CornerMarker corner={props.cell.corner} />}
     </button>
   )
 }
 
-export function GameGrid({ config, gameId, pieces }: GameGridProps) {
+export function GameGrid(props: GameGridProps) {
   const [showCellIds, setShowCellIds] = useState(false)
   const [selectedCellKeys, setSelectedCellKeys] = useState<Set<string>>(() => new Set())
   const [selectionLoaded, setSelectionLoaded] = useState(false)
-  const cellMap = createCellMap(pieces)
-  const boardCells = Array.from({ length: config.columns * config.rows }, (_, index) => ({
-    x: index % config.columns,
-    y: Math.floor(index / config.columns),
+  const cellMap = createCellMap(props.pieces)
+  const boardCells = Array.from({ length: props.config.columns * props.config.rows }, (_, index) => ({
+    x: index % props.config.columns,
+    y: Math.floor(index / props.config.columns),
   }))
-  const gridColumnClass = GRID_COLUMN_CLASSES[config.columns]
-
-  if (!gridColumnClass) {
-    throw new Error(`Unsupported board width: ${config.columns}. Add a matching Tailwind grid class.`)
-  }
-
   function toggleCellIds() {
     setShowCellIds((visible) => !visible)
   }
@@ -122,7 +111,7 @@ export function GameGrid({ config, gameId, pieces }: GameGridProps) {
     setSelectedCellKeys(new Set())
     setSelectionLoaded(false)
 
-    void loadGameSelection(gameId)
+    void loadGameSelection(props.gameMode, props.gameId)
       .then((storedCellKeys) => {
         if (active) {
           setSelectedCellKeys(new Set(storedCellKeys))
@@ -140,19 +129,22 @@ export function GameGrid({ config, gameId, pieces }: GameGridProps) {
     return () => {
       active = false
     }
-  }, [gameId])
+  }, [props.gameId, props.gameMode])
 
   useEffect(() => {
     if (!selectionLoaded) return
-    void saveGameSelection(gameId, selectedCellKeys).catch(() => {
+    void saveGameSelection(props.gameMode, props.gameId, selectedCellKeys).catch(() => {
       // Selection remains available for the current session if IndexedDB is unavailable.
     })
-  }, [gameId, selectedCellKeys, selectionLoaded])
+  }, [props.gameId, props.gameMode, selectedCellKeys, selectionLoaded])
 
   return (
     <div className="space-y-3 px-1">
       <section aria-label="Game board" className="element-shadow mx-auto w-full max-w-[550px] p-1 [--element-color:var(--paper)]">
-        <div className={cn('grid gap-0.5', gridColumnClass)}>
+        <div
+          className="grid gap-0.5"
+          style={{ gridTemplateColumns: `repeat(${props.config.columns}, minmax(0, 1fr))` }}
+        >
           {boardCells.map(({ x, y }) => {
             const cellKey = `${x},${y}`
             const piece = cellMap.get(cellKey)

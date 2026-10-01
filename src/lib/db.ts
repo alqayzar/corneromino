@@ -1,4 +1,5 @@
 import { openDB } from 'idb'
+import type { GameMode } from '@/game/placement'
 
 export interface StoredGame {
   id: string
@@ -10,21 +11,21 @@ interface GameSelectionState {
   selectedCellKeys: string[]
 }
 
-interface CornerminoDatabase {
+interface CornerominoDatabase {
   games: {
     key: string
     value: StoredGame
   }
 }
 
-export const db = openDB<CornerminoDatabase>('cornermino', 1, {
+export const db = openDB<CornerominoDatabase>('corneromino', 1, {
   upgrade(database) {
     database.createObjectStore('games', { keyPath: 'id' })
   },
 })
 
-function selectionStorageKey(gameId: string): string {
-  return `selection:${gameId}`
+function selectionStorageKey(gameMode: GameMode, gameId: string): string {
+  return `selection:${gameMode}:${gameId}`
 }
 
 function isGameSelectionState(state: unknown): state is GameSelectionState {
@@ -37,19 +38,19 @@ function isGameSelectionState(state: unknown): state is GameSelectionState {
   )
 }
 
-export async function loadGameSelection(gameId: string): Promise<string[]> {
-  const storedGame = await (await db).get('games', selectionStorageKey(gameId))
+export async function loadGameSelection(gameMode: GameMode, gameId: string): Promise<string[]> {
+  const storedGame = await (await db).get('games', selectionStorageKey(gameMode, gameId))
   return storedGame && isGameSelectionState(storedGame.state) ? storedGame.state.selectedCellKeys : []
 }
 
-export async function saveGameSelection(gameId: string, selectedCellKeys: Iterable<string>): Promise<void> {
+export async function saveGameSelection(gameMode: GameMode, gameId: string, selectedCellKeys: Iterable<string>): Promise<void> {
   await (await db).put('games', {
-    id: selectionStorageKey(gameId),
+    id: selectionStorageKey(gameMode, gameId),
     updatedAt: Date.now(),
     state: { selectedCellKeys: [...selectedCellKeys] },
   })
 }
 
-export async function clearGameSelection(gameId: string): Promise<void> {
-  await (await db).delete('games', selectionStorageKey(gameId))
+export async function clearGameSelection(gameMode: GameMode, gameId: string): Promise<void> {
+  await (await db).delete('games', selectionStorageKey(gameMode, gameId))
 }
