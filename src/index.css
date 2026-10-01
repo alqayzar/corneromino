@@ -1,0 +1,132 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'Abbots Morton Spaceport Mono';
+  src: url('./assets/fonts/AbbotsMortonSpaceportMono-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Abbots Morton Spaceport Mono';
+  src: url('./assets/fonts/AbbotsMortonSpaceportMono-Bold.woff2') format('woff2');
+  font-weight: 700 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  color-scheme: light;
+  font-family: 'Abbots Morton Spaceport Mono', monospace;
+  --background: var(--canvas);
+  --foreground: var(--text-color);
+  --card: var(--paper);
+  --card-foreground: var(--text-color);
+  --primary: var(--outline-color);
+  --primary-foreground: var(--paper);
+  --muted: var(--paper-muted);
+  --muted-foreground: var(--muted-text-color);
+  --border: var(--outline-color);
+  --ring: var(--outline-color);
+  --radius: 0.2rem;
+  --canvas: #3e3eec;
+  --canvas-deep: #241138;
+  --canvas-foreground: #f7f7f4;
+  --paper: #f7f7f4;
+  --paper-muted: #ffffff;
+  --text-color: #151515;
+  --outline-color: #151515;
+  --muted-text-color: #686868;
+  --coral: #ff5c8a;
+  --mint: #08dcb0;
+  --surface-shadow: #d7c0ec;
+}
+
+@theme inline {
+  --font-sans: 'Abbots Morton Spaceport Mono', monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    margin: 0;
+    min-width: 320px;
+    -webkit-font-smoothing: none;
+    -moz-osx-font-smoothing: unset;
+  }
+
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+#root {
+  min-height: 100dvh;
+}
+
+.cartoon-press {
+  --cartoon-shadow-depth: 6px;
+  background-color: var(--element-color, var(--paper));
+  box-shadow: inset 0 calc(0px - var(--cartoon-shadow-depth)) 0 color-mix(in srgb, var(--element-color, var(--paper)), var(--outline-color) 18%) !important;
+  padding-bottom: var(--cartoon-shadow-depth) !important;
+  touch-action: manipulation;
+  transform: translateY(0);
+  transition: box-shadow 80ms ease, padding-bottom 80ms ease, background-color 120ms ease !important;
+}
+
+[data-slot='button'] {
+  border-color: var(--outline-color) !important;
+  border-width: 4px !important;
+  border-radius: var(--radius-lg) !important;
+}
+
+.cartoon-press:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--element-color, var(--paper)), white 20%) !important;
+}
+
+.cartoon-press:active:not(:disabled) {
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--element-color, var(--paper)), var(--outline-color) 18%) !important;
+  padding-bottom: 0 !important;
+  transition-duration: 65ms !important;
+  transition-timing-function: cubic-bezier(0.4, 0, 1, 1) !important;
+}
+
+.element-shadow {
+  --element-shadow-depth: 6px;
+  background-color: var(--element-color, var(--paper));
+  border: 4px solid var(--outline-color);
+  border-radius: var(--radius);
+  box-shadow: inset 0 calc(0px - var(--element-shadow-depth)) 0 var(--surface-shadow);
+}
+
+.element-shadow::after {
+  content: '';
+  display: block;
+  height: var(--element-shadow-depth);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cartoon-press {
+    transition: none !important;
+  }
+}

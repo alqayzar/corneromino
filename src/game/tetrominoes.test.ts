@@ -1,0 +1,40 @@
+import { describe, expect, it } from 'vitest'
+import { createTetrominoCells, TETROMINOES, TETROMINO_KINDS } from './tetrominoes'
+
+const rotationCounts = {
+  I: 2,
+  J: 4,
+  L: 4,
+  O: 1,
+  S: 2,
+  T: 4,
+  Z: 2,
+  diagonal: 2,
+} as const
+
+describe('tetromino definitions', () => {
+  it('defines every standard piece and the custom diagonal piece', () => {
+    expect(Object.keys(TETROMINOES)).toEqual(TETROMINO_KINDS)
+  })
+
+  it.each(TETROMINO_KINDS)('%s has four uniquely positioned, independently identified cells', (kind) => {
+    for (const rotation of TETROMINOES[kind].rotations) {
+      expect(rotation.cells).toHaveLength(4)
+      expect(new Set(rotation.cells.map((cell) => cell.id))).toEqual(new Set(['a', 'b', 'c', 'd']))
+      expect(new Set(rotation.cells.map((cell) => `${cell.x},${cell.y}`))).toHaveLength(4)
+    }
+  })
+
+  it.each(TETROMINO_KINDS)('%s exposes its unique rotations', (kind) => {
+    expect(TETROMINOES[kind].rotations).toHaveLength(rotationCounts[kind])
+  })
+
+  it('returns mutable cell copies while preserving the rotation cell IDs', () => {
+    const cells = createTetrominoCells('L', 1)
+    cells[0].x = 42
+
+    expect(cells[0].x).toBe(42)
+    expect(createTetrominoCells('L', 1)[0].x).not.toBe(42)
+    expect(createTetrominoCells('L', 1).map((cell) => cell.id)).toEqual(['a', 'b', 'c', 'd'])
+  })
+})
