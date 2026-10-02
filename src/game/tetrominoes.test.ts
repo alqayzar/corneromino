@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createTetrominoCells, TETROMINOES, TETROMINO_KINDS } from './tetrominoes'
+import { createTetrominoCells, isTetrominoShape, TETROMINOES, TETROMINO_KINDS } from './tetrominoes'
 
 const rotationCounts = {
   I: 2,
@@ -36,5 +36,22 @@ describe('tetromino definitions', () => {
     expect(cells[0].x).toBe(42)
     expect(createTetrominoCells('L', 1)[0].x).not.toBe(42)
     expect(createTetrominoCells('L', 1).map((cell) => cell.id)).toEqual(['a', 'b', 'c', 'd'])
+  })
+
+  it('recognizes every tetromino rotation regardless of its board position', () => {
+    for (const kind of TETROMINO_KINDS) {
+      for (const rotation of TETROMINOES[kind].rotations) {
+        expect(isTetrominoShape(rotation.cells.map((cell) => ({ x: cell.x + 7, y: cell.y + 11 })))).toBe(true)
+      }
+    }
+  })
+
+  it('rejects selections that do not form a tetromino', () => {
+    expect(isTetrominoShape([
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+      { x: 3, y: 0 },
+      { x: 4, y: 0 },
+    ])).toBe(false)
   })
 })

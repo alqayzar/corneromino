@@ -21,6 +21,11 @@ export interface TetrominoDefinition {
   rotations: readonly TetrominoRotation[]
 }
 
+export interface GridPosition {
+  x: number
+  y: number
+}
+
 type CellPosition = Pick<TetrominoCell, 'x' | 'y'>
 
 const CELL_IDS: readonly CellId[] = ['a', 'b', 'c', 'd']
@@ -123,6 +128,23 @@ export const TETROMINOES: Readonly<Record<TetrominoKind, TetrominoDefinition>> =
     },
   ]),
 ) as Readonly<Record<TetrominoKind, TetrominoDefinition>>
+
+const TETROMINO_SHAPE_KEYS = new Set(
+  Object.values(TETROMINOES).flatMap((tetromino) => tetromino.rotations.map((rotation) => rotationKey(rotation.cells))),
+)
+
+/** Checks whether four coordinates match a tetromino rotation after translation. */
+export function isTetrominoShape(cells: readonly GridPosition[]): boolean {
+  if (cells.length !== 4 || new Set(cells.map((cell) => `${cell.x},${cell.y}`)).size !== 4) {
+    return false
+  }
+
+  const minX = Math.min(...cells.map((cell) => cell.x))
+  const minY = Math.min(...cells.map((cell) => cell.y))
+  const normalizedCells = cells.map((cell) => ({ id: 'a' as const, x: cell.x - minX, y: cell.y - minY }))
+
+  return TETROMINO_SHAPE_KEYS.has(rotationKey(normalizedCells))
+}
 
 /** Returns a copy that gameplay code may decorate (for example, with per-cell colors). */
 export function createTetrominoCells(kind: TetrominoKind, turns = 0): TetrominoCell[] {

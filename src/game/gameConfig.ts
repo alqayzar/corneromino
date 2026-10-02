@@ -36,3 +36,14 @@ export interface PlacedTetromino {
   kind: TetrominoKind
   cells: readonly PlacedTetrominoCell[]
 }
+
+export interface LockedCellGroup {
+  cellKeys: string[]
+  color: string
+  id: string
+}
+
+export interface GameSelectionState {
+  lockedCellGroups: LockedCellGroup[]
+  selectedCellKeys: string[]
+}
