@@ -12,7 +12,7 @@ export const GAME_MODES = ['easy', 'medium', 'hard'] as const
 export type GameMode = (typeof GAME_MODES)[number]
 
 export const GAME_CONFIGS = {
-  easy: { columns: 8, rows: 8, spread: 0, tetrominoCount: 5 },
+  easy: { columns: 8, rows: 8, spread: 0, tetrominoCount: 10 },
   medium: { columns: 10, rows: 15, spread: 0.5, tetrominoCount: 20 },
   hard: { columns: 12, rows: 18, spread: 0.8, tetrominoCount: 35 },
 } as const satisfies Record<GameMode, GameConfig>
