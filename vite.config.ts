@@ -4,6 +4,7 @@ import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig(({ command }) => ({
+  base: command === 'build' ? process.env.VITE_BASE_PATH ?? '/' : '/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
