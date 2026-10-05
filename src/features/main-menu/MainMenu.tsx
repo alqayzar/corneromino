@@ -17,13 +17,6 @@ export function MainMenu() {
         >
           <Link to="/play">Play</Link>
         </Button>
-        <Button
-          asChild
-          className="cartoon-press h-[66px] w-full rounded-2xl border-[var(--outline-color)] [--element-color:var(--mint)] text-[22px] font-black tracking-[0.05em] text-[var(--text-color)] uppercase hover:bg-[#95e7df]"
-          size="lg"
-        >
-          <Link to="/list">Tetrominos</Link>
-        </Button>
       </section>
     </main>
   )
