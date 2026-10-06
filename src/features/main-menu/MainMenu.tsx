@@ -1,22 +1,22 @@
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { TetrominoBackground } from '@/components/TetrominoBackground'
 
 export function MainMenu() {
   return (
-    <main className="relative grid min-h-dvh place-items-center overflow-hidden bg-[var(--canvas)] px-5 py-8 text-[var(--canvas-foreground)]">
-      <TetrominoBackground />
-      <section className="relative z-10 flex w-full max-w-[380px] flex-col items-center gap-4 text-center">
-        <h1 className="mb-4 text-[33px] leading-none font-black tracking-[-0.055em] min-[375px]:text-[44px] sm:text-[55px]">
+    <main className="poster-page relative grid min-h-dvh place-items-center overflow-hidden px-5 py-8 text-[var(--canvas-foreground)]">
+      <section className="relative z-10 flex w-full max-w-[430px] flex-col items-center gap-5 text-center">
+        <p className="poster-kicker text-[10px] text-[var(--muted-text-color)]">A spatial deduction game</p>
+        <h1 className="poster-title text-[50px] leading-[0.8] min-[375px]:text-[68px] sm:text-[82px]">
           Corneromino
         </h1>
         <Button
           asChild
-          className="cartoon-press h-[66px] w-full rounded-2xl border-[var(--outline-color)] [--element-color:var(--mint)] text-[22px] font-black tracking-[0.05em] text-[var(--text-color)] uppercase hover:bg-[#95e7df]"
+          className="cartoon-press h-[64px] w-full text-[15px] font-black tracking-[0.2em] text-[var(--canvas-foreground)] uppercase"
           size="lg"
         >
           <Link to="/play">Play</Link>
         </Button>
+        <p className="poster-kicker text-[9px] text-[var(--muted-text-color)]">Find the hidden forms</p>
       </section>
     </main>
   )

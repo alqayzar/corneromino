@@ -44,6 +44,8 @@ export interface LockedCellGroup {
 }
 
 export interface GameSelectionState {
+  gameGridScreenshot: Blob | null
   lockedCellGroups: LockedCellGroup[]
+  savedAt: number | null
   selectedCellKeys: string[]
 }

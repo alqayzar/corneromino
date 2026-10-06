@@ -24,7 +24,7 @@
 
 :root {
   color-scheme: light;
-  font-family: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+  font-family: 'Abbots Morton Spaceport Mono', ui-monospace, monospace;
   --background: var(--canvas);
   --foreground: var(--text-color);
   --card: var(--paper);
@@ -35,24 +35,24 @@
   --muted-foreground: var(--muted-text-color);
   --border: var(--outline-color);
   --ring: var(--outline-color);
-  --radius: 0.2rem;
-  --canvas: #3e3eec;
-  --canvas-deep: #241138;
-  --canvas-foreground: #f7f7f4;
-  --paper: #f7f7f4;
-  --paper-muted: #ffffff;
-  --text-color: #151515;
-  --outline-color: #151515;
-  --muted-text-color: #686868;
-  --coral: #ff5c8a;
-  --mint: #08dcb0;
-  --yellow: #F7D08A;
-  --olive: #8BA88A;
-  --surface-shadow: #d7c0ec;
+  --radius: 0;
+  --canvas: #f0ad61;
+  --canvas-deep: #d37a36;
+  --canvas-foreground: #15100e;
+  --paper: #ffd18a;
+  --paper-muted: #f5bc6a;
+  --text-color: #15100e;
+  --outline-color: #713324;
+  --muted-text-color: #6e3d2d;
+  --coral: #9e2e25;
+  --mint: #315c45;
+  --yellow: #8b3a21;
+  --olive: #694027;
+  --surface-shadow: #854530;
 }
 
 @theme inline {
-  --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Abbots Morton Spaceport Mono', ui-monospace, monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -91,48 +91,119 @@
 }
 
 .cartoon-press {
-  --cartoon-shadow-depth: 6px;
-  background-color: var(--element-color, var(--paper));
-  box-shadow: inset 0 calc(0px - var(--cartoon-shadow-depth)) 0 color-mix(in srgb, var(--element-color, var(--paper)), var(--outline-color) 18%) !important;
-  padding-bottom: var(--cartoon-shadow-depth) !important;
+  --press-shadow-depth: 6px;
+  position: relative;
+  overflow: hidden;
+  background-color: #ffd18a;
+  border: 1px solid #713324 !important;
+  box-shadow:
+    inset 0 calc(0px - var(--press-shadow-depth)) 0 #b95c2e,
+    0 0 0 1px rgb(21 16 14 / 8%) !important;
+  padding-bottom: var(--press-shadow-depth) !important;
   touch-action: manipulation;
-  transform: translateY(0);
   transition: box-shadow 80ms ease, padding-bottom 80ms ease, background-color 120ms ease !important;
 }
 
+.cartoon-press::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: var(--press-shadow-depth);
+  pointer-events: none;
+  background: #b95c2e;
+  transition: height 80ms ease;
+}
+
 [data-slot='button'] {
-  border-color: var(--outline-color) !important;
-  border-width: 4px !important;
-  border-radius: var(--radius-lg) !important;
+  border-radius: 0 !important;
 }
 
 .cartoon-press:hover:not(:disabled) {
-  background-color: color-mix(in srgb, var(--element-color, var(--paper)), white 20%) !important;
+  background-color: #ffe0a4;
+  border-color: #15100e !important;
+  box-shadow:
+    inset 0 calc(0px - var(--press-shadow-depth)) 0 #b95c2e,
+    0 0 0 1px rgb(21 16 14 / 14%) !important;
 }
 
 .cartoon-press:active:not(:disabled) {
-  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--element-color, var(--paper)), var(--outline-color) 18%) !important;
+  background-color: #e49a50;
+  box-shadow:
+    inset 0 -1px 0 #b95c2e,
+    0 0 0 1px rgb(21 16 14 / 8%) !important;
   padding-bottom: 0 !important;
   transition-duration: 65ms !important;
   transition-timing-function: cubic-bezier(0.4, 0, 1, 1) !important;
 }
 
+.cartoon-press:active:not(:disabled)::after {
+  height: 1px;
+  transition-duration: 65ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 1, 1);
+}
+
+.saved-game-card {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--paper);
+  border: 1px solid var(--outline-color);
+  box-shadow: inset 0 -6px 0 color-mix(in srgb, var(--outline-color) 72%, var(--canvas-deep));
+  padding-bottom: 14px !important;
+}
+
+.saved-game-card::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 6px;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--outline-color) 72%, var(--canvas-deep));
+}
+
 .element-shadow {
-  --element-shadow-depth: 6px;
-  background-color: var(--element-color, var(--paper));
-  border: 4px solid var(--outline-color);
-  border-radius: var(--radius);
-  box-shadow: inset 0 calc(0px - var(--element-shadow-depth)) 0 var(--surface-shadow);
+  background-color: color-mix(in srgb, var(--element-color, var(--paper)) 72%, transparent);
+  border: 1px solid var(--outline-color);
+  border-radius: 0;
+  box-shadow: 0 0 0 1px rgb(21 16 14 / 12%), inset 0 0 24px rgb(113 51 36 / 12%);
 }
 
 .element-shadow::after {
-  content: '';
-  display: block;
-  height: var(--element-shadow-depth);
+  content: none;
 }
 
-.tetromino-motion {
-  will-change: translate;
+.poster-page {
+  isolation: isolate;
+  background:
+    linear-gradient(rgb(113 51 36 / 13%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(113 51 36 / 13%) 1px, transparent 1px),
+    linear-gradient(145deg, #ffd18a 0%, var(--canvas) 52%, #d9853f 100%);
+  background-size: 64px 64px, 64px 64px, auto;
+}
+
+.poster-page::before {
+  content: none;
+}
+
+.poster-kicker {
+  font-family: 'Abbots Morton Spaceport Mono', monospace;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.poster-title {
+  font-weight: 900;
+  letter-spacing: -0.075em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 rgb(255 227 176 / 55%);
+}
+
+.neon-rule {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--coral), var(--yellow), transparent);
 }
 
 @keyframes tetromino-drift-right {
