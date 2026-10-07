@@ -29,7 +29,7 @@ function DialogFooter(props: React.ComponentProps<'div'>) {
 }
 
 function DialogTitle(props: React.ComponentProps<typeof DialogPrimitive.Title>) {
-  return <DialogPrimitive.Title {...props} className={cn('poster-title text-[27px]', props.className)} />
+  return <DialogPrimitive.Title {...props} className={cn('poster-title text-[33px]', props.className)} />
 }
 
 function DialogDescription(props: React.ComponentProps<typeof DialogPrimitive.Description>) {

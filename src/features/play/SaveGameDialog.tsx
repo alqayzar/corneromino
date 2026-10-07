@@ -19,7 +19,7 @@ export function SaveGameDialog(props: SaveGameDialogProps) {
         </DialogHeader>
         <DialogFooter>
           <Button
-            className="cartoon-press h-[42px] text-[10px] font-black tracking-[0.1em] text-[var(--canvas-foreground)] uppercase"
+            className="cartoon-press h-[42px] text-[11px] font-black tracking-[0.1em] text-[var(--canvas-foreground)] uppercase"
             disabled={props.isSaving}
             onClick={props.onDiscard}
             size="lg"
@@ -28,7 +28,7 @@ export function SaveGameDialog(props: SaveGameDialogProps) {
             Discard
           </Button>
           <Button
-            className="cartoon-press h-[42px] text-[10px] font-black tracking-[0.1em] text-[var(--canvas-foreground)] uppercase"
+            className="cartoon-press h-[42px] text-[11px] font-black tracking-[0.1em] text-[var(--canvas-foreground)] uppercase"
             disabled={props.isSaving}
             onClick={props.onSave}
             size="lg"
@@ -38,7 +38,7 @@ export function SaveGameDialog(props: SaveGameDialogProps) {
           </Button>
         </DialogFooter>
         <DialogClose asChild>
-          <button className="mt-5 w-full text-[10px] text-[var(--muted-text-color)] underline underline-offset-4" disabled={props.isSaving} type="button">
+          <button className="mt-5 w-full text-[11px] text-[var(--muted-text-color)] underline underline-offset-4" disabled={props.isSaving} type="button">
             Cancel
           </button>
         </DialogClose>

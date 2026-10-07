@@ -8,17 +8,22 @@ export interface GameConfig {
   tetrominoCount: number
 }
 
-export const GAME_MODES = ['easy', 'medium', 'hard'] as const
-export type GameMode = (typeof GAME_MODES)[number]
+export interface GameModeConfig extends GameConfig {
+  title: string
+}
 
 export const GAME_CONFIGS = {
-  easy: { columns: 8, rows: 8, spread: 0, tetrominoCount: 10 },
-  medium: { columns: 10, rows: 15, spread: 0.5, tetrominoCount: 20 },
-  hard: { columns: 12, rows: 18, spread: 0.8, tetrominoCount: 35 },
-} as const satisfies Record<GameMode, GameConfig>
+  'super-easy': { columns: 8, rows: 8, spread: 1, tetrominoCount: 5, title: 'Super easy' },
+  easy: { columns: 8, rows: 8, spread: 0, tetrominoCount: 10, title: 'Easy' },
+  medium: { columns: 10, rows: 15, spread: 0.5, tetrominoCount: 20, title: 'Medium' },
+  hard: { columns: 12, rows: 18, spread: 0.8, tetrominoCount: 35, title: 'Hard' },
+} as const satisfies Record<string, GameModeConfig>
+
+export type GameMode = keyof typeof GAME_CONFIGS
+export const GAME_MODES = Object.keys(GAME_CONFIGS) as GameMode[]
 
 export function isGameMode(value: string | null): value is GameMode {
-  return GAME_MODES.some((mode) => mode === value)
+  return value !== null && value in GAME_CONFIGS
 }
 
 export const CELL_CORNERS = ['top-left', 'top-right', 'bottom-right', 'bottom-left'] as const
@@ -43,9 +48,20 @@ export interface LockedCellGroup {
   id: string
 }
 
+export type CellMarkerColor = 'black' | 'white'
+
+export interface CellMarker {
+  cellKey: string
+  color: CellMarkerColor
+}
+
 export interface GameSelectionState {
+  elapsedSeconds: number
   gameGridScreenshot: Blob | null
+  isCompleted: boolean
   lockedCellGroups: LockedCellGroup[]
+  markers: CellMarker[]
+  moveCount: number
   savedAt: number | null
   selectedCellKeys: string[]
 }

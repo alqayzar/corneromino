@@ -77,6 +77,7 @@
     @apply bg-background text-foreground;
     margin: 0;
     min-width: 320px;
+    overscroll-behavior-y: none;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -164,6 +165,62 @@
   background: color-mix(in srgb, var(--outline-color) 72%, var(--canvas-deep));
 }
 
+.locked-tetromino-cell {
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.locked-tetromino-cell::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  inset: -30% -70%;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 42%, rgb(255 255 255 / 12%) 47%, rgb(255 255 255 / 72%) 50%, rgb(255 255 255 / 12%) 53%, transparent 58%);
+  transform: translateX(-60%);
+  animation: locked-cell-shine 4s linear infinite;
+}
+
+.completion-dim {
+  animation: completion-dim 450ms ease-out forwards;
+}
+
+.completion-message {
+  animation: completion-message 500ms 150ms both;
+}
+
+@keyframes completion-dim {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 0.68;
+  }
+}
+
+@keyframes completion-message {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes locked-cell-shine {
+  0% {
+    transform: translateX(-60%);
+  }
+
+  18%, 100% {
+    transform: translateX(60%);
+  }
+}
+
 .element-shadow {
   background-color: color-mix(in srgb, var(--element-color, var(--paper)) 72%, transparent);
   border: 1px solid var(--outline-color);
@@ -196,7 +253,7 @@
 
 .poster-title {
   font-weight: 900;
-  letter-spacing: -0.075em;
+  letter-spacing: 0;
   text-transform: uppercase;
   text-shadow: 0 1px 0 rgb(255 227 176 / 55%);
 }
@@ -246,5 +303,9 @@
 
   .tetromino-motion {
     animation: none !important;
+  }
+
+  .locked-tetromino-cell::before {
+    animation: none;
   }
 }
