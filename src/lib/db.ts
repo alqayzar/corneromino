@@ -14,16 +14,40 @@ export interface SavedGame {
   screenshot: Blob
 }
 
+export interface SandboxWorldState {
+  cornerMarkers: Array<{ cellKey: string; corner: number }>
+  gridOffsetX: number
+  gridOffsetY: number
+  zoom: number
+}
+
+export interface SavedSandboxWorld {
+  id: string
+  name: string
+  savedAt: number
+  screenshot: Blob
+  state: SandboxWorldState
+}
+
 interface CornerominoDatabase {
   games: {
     key: string
     value: StoredGame
   }
+  sandboxWorlds: {
+    key: string
+    value: SavedSandboxWorld
+  }
 }
 
-export const db = openDB<CornerominoDatabase>('corneromino', 1, {
+export const db = openDB<CornerominoDatabase>('corneromino', 2, {
   upgrade(database) {
-    database.createObjectStore('games', { keyPath: 'id' })
+    if (!database.objectStoreNames.contains('games')) {
+      database.createObjectStore('games', { keyPath: 'id' })
+    }
+    if (!database.objectStoreNames.contains('sandboxWorlds')) {
+      database.createObjectStore('sandboxWorlds', { keyPath: 'id' })
+    }
   },
 })
 
@@ -144,4 +168,21 @@ export async function clearGameSelection(gameMode: GameMode, gameId: string): Pr
 
 export async function deleteSavedGame(gameMode: GameMode, gameId: string): Promise<void> {
   await clearGameSelection(gameMode, gameId)
+}
+
+export async function saveSandboxWorld(world: SavedSandboxWorld): Promise<void> {
+  await (await db).put('sandboxWorlds', world)
+}
+
+export async function loadSandboxWorlds(): Promise<SavedSandboxWorld[]> {
+  const worlds = await (await db).getAll('sandboxWorlds')
+  return worlds.sort((firstWorld, secondWorld) => secondWorld.savedAt - firstWorld.savedAt)
+}
+
+export async function loadSandboxWorld(worldId: string): Promise<SavedSandboxWorld | null> {
+  return (await (await db).get('sandboxWorlds', worldId)) ?? null
+}
+
+export async function deleteSandboxWorld(worldId: string): Promise<void> {
+  await (await db).delete('sandboxWorlds', worldId)
 }

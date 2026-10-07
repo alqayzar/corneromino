@@ -3,7 +3,7 @@ import { Check, Eraser, ListChecks, Lock, LogOut, RotateCcw, Unlock, X } from 'l
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import type { CellCorner, CellMarkerColor, GameConfig, GameMode, LockedCellGroup, PlacedTetromino, PlacedTetrominoCell } from '@/game/gameConfig'
+import type { CellCorner, CellMarkerColor, GameConfig, GameMode, GameSelectionState, LockedCellGroup, PlacedTetromino, PlacedTetrominoCell } from '@/game/gameConfig'
 import { isTetrominoShape } from '@/game/tetrominoes'
 import { clearGameSelection, loadGameSelection, saveGameSelection } from '@/lib/db'
 import { cn } from '@/lib/utils'
@@ -151,6 +151,7 @@ export function GameGrid(props: GameGridProps) {
   const [savedAt, setSavedAt] = useState<number | null>(null)
   const gameBoardRef = useRef<HTMLElement>(null)
   const persistenceQueueRef = useRef<Promise<void>>(Promise.resolve())
+  const savedSelectionRef = useRef<GameSelectionState | null>(null)
   const cellMap = createCellMap(props.pieces)
   const lockedCellMap = createLockedCellMap(lockedCellGroups)
   const boardCells = Array.from({ length: props.config.columns * props.config.rows }, (_, index) => ({
@@ -179,6 +180,7 @@ export function GameGrid(props: GameGridProps) {
     setIsCompleted(false)
     setCompletionVisible(false)
     setSavedAt(null)
+    savedSelectionRef.current = null
   }
 
   function queuePersistence(task: () => Promise<void>): Promise<void> {
@@ -212,9 +214,7 @@ export function GameGrid(props: GameGridProps) {
       if (saveGame) {
         const screenshot = (await captureGameGridScreenshot()) ?? gameGridScreenshot
         const nextSavedAt = Date.now()
-        setGameGridScreenshot(screenshot)
-        setSavedAt(nextSavedAt)
-        await queuePersistence(() => saveGameSelection(props.gameMode, props.gameId, {
+        const savedSelection: GameSelectionState = {
           elapsedSeconds,
           gameGridScreenshot: screenshot,
           isCompleted,
@@ -223,10 +223,21 @@ export function GameGrid(props: GameGridProps) {
           moveCount,
           savedAt: nextSavedAt,
           selectedCellKeys: [...selectedCellKeys],
-        }))
+        }
+        setGameGridScreenshot(screenshot)
+        setSavedAt(nextSavedAt)
+        savedSelectionRef.current = savedSelection
+        await queuePersistence(() => saveGameSelection(props.gameMode, props.gameId, savedSelection))
+      } else if (savedSelectionRef.current) {
+        await queuePersistence(() => saveGameSelection(props.gameMode, props.gameId, savedSelectionRef.current!))
       } else {
         await persistenceQueueRef.current.catch(() => undefined)
-        await clearGameSelection(props.gameMode, props.gameId)
+        const storedSelection = await loadGameSelection(props.gameMode, props.gameId)
+        if (storedSelection.savedAt !== null) {
+          await saveGameSelection(props.gameMode, props.gameId, storedSelection)
+        } else {
+          await clearGameSelection(props.gameMode, props.gameId)
+        }
       }
     } finally {
       navigate('/play')
@@ -373,6 +384,7 @@ export function GameGrid(props: GameGridProps) {
     setMoveCount(0)
     props.onMoveCountChange(0)
     setSavedAt(null)
+    savedSelectionRef.current = null
     setSelectionLoaded(false)
 
     void loadGameSelection(props.gameMode, props.gameId)
@@ -389,6 +401,7 @@ export function GameGrid(props: GameGridProps) {
           setMoveCount(storedSelection.moveCount)
           props.onMoveCountChange(storedSelection.moveCount)
           setSavedAt(storedSelection.savedAt)
+          savedSelectionRef.current = storedSelection.savedAt === null ? null : storedSelection
         }
       })
       .catch(() => {
