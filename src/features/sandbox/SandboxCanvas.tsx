@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import { Application, Graphics } from 'pixi.js'
 import type { SandboxWorldState } from '@/lib/db'
+import { SandboxCellSystem } from './cellSystem'
 
 const BASE_CELL_SIZE = 56
 const MIN_ZOOM = 0.2
@@ -12,10 +13,18 @@ const CORNER_MARKER_TOP_RIGHT = 1
 const CORNER_MARKER_BOTTOM_RIGHT = 2
 const CORNER_MARKER_BOTTOM_LEFT = 3
 const PAN_THRESHOLD = 4
+const UPDATES_PER_FRAME = 8
+const CORNER_TRANSITION_DURATION_MS = 20
 
 interface PointerPosition {
   x: number
   y: number
+}
+
+interface CornerTransition {
+  fromCorner: number
+  startedAt: number
+  toCorner: number
 }
 
 interface SandboxCanvasProps {
@@ -78,11 +87,49 @@ export const SandboxCanvas = forwardRef<SandboxCanvasHandle, SandboxCanvasProps>
     let pinchStartDistance = 0
     let pinchStartZoom = 1
     let zoom = props.initialState?.zoom ?? 1
-    const cornerMarkers = new Map(props.initialState?.cornerMarkers.map((marker) => [marker.cellKey, marker.corner]))
+    const cellSystem = new SandboxCellSystem(props.initialState?.cornerMarkers ?? [])
+    const cornerTransitions = new Map<string, CornerTransition>()
+    let cornerAnimationFrame = 0
+    let lastCornerStates = new Map<string, number>()
+    let updateAnimationFrame = 0
+
+    function getCornerMarkerPosition(corner: number, x: number, y: number, cellSize: number) {
+      const markerSize = cellSize / 2
+      const markerPadding = cellSize * 0.07
+      return {
+        markerSize,
+        x: corner === CORNER_MARKER_TOP_RIGHT || corner === CORNER_MARKER_BOTTOM_RIGHT
+          ? x + cellSize - markerPadding - markerSize
+          : x + markerPadding,
+        y: corner === CORNER_MARKER_BOTTOM_RIGHT || corner === CORNER_MARKER_BOTTOM_LEFT
+          ? y + cellSize - markerPadding - markerSize
+          : y + markerPadding,
+      }
+    }
+
+    function scheduleCornerAnimation() {
+      if (cornerTransitions.size === 0 || cornerAnimationFrame !== 0) return
+
+      cornerAnimationFrame = window.requestAnimationFrame(() => {
+        cornerAnimationFrame = 0
+        drawGrid()
+      })
+    }
 
     function drawGrid() {
       const cellSize = BASE_CELL_SIZE * zoom
       const borderWidth = 2 * zoom
+      const now = performance.now()
+      const currentCornerStates = new Map(cellSystem.getMarkers().map((marker) => [marker.cellKey, marker.corner]))
+
+      for (const [cellKey, corner] of currentCornerStates) {
+        const previousCorner = lastCornerStates.get(cellKey)
+        if (previousCorner !== undefined && previousCorner !== corner) {
+          cornerTransitions.set(cellKey, { fromCorner: previousCorner, startedAt: now, toCorner: corner })
+        }
+      }
+      lastCornerStates = currentCornerStates
+
       const firstColumn = Math.floor(-gridOffsetX / cellSize) - 1
       const lastColumn = Math.ceil((app.renderer.width - gridOffsetX) / cellSize) + 1
       const firstRow = Math.floor(-gridOffsetY / cellSize) - 1
@@ -98,23 +145,29 @@ export const SandboxCanvas = forwardRef<SandboxCanvasHandle, SandboxCanvasProps>
             .fill({ color: CELL_FILL_COLOR })
             .stroke({ color: CELL_BORDER_COLOR, width: borderWidth })
 
-          const cornerMarker = cornerMarkers.get(`${column},${row}`)
+          const cellKey = `${column},${row}`
+          const cornerMarker = currentCornerStates.get(cellKey)
           if (cornerMarker === undefined) continue
 
-          const markerSize = cellSize / 2
-          const markerPadding = cellSize * 0.07
-          const markerX = cornerMarker === CORNER_MARKER_TOP_RIGHT || cornerMarker === CORNER_MARKER_BOTTOM_RIGHT
-            ? x + cellSize - markerPadding - markerSize
-            : x + markerPadding
-          const markerY = cornerMarker === CORNER_MARKER_BOTTOM_RIGHT || cornerMarker === CORNER_MARKER_BOTTOM_LEFT
-            ? y + cellSize - markerPadding - markerSize
-            : y + markerPadding
+          const transition = cornerTransitions.get(cellKey)
+          const transitionProgress = transition ? Math.min(1, (now - transition.startedAt) / CORNER_TRANSITION_DURATION_MS) : 1
+          const fromPosition = getCornerMarkerPosition(transition?.fromCorner ?? cornerMarker, x, y, cellSize)
+          const toPosition = getCornerMarkerPosition(cornerMarker, x, y, cellSize)
+          const markerX = fromPosition.x + (toPosition.x - fromPosition.x) * transitionProgress
+          const markerY = fromPosition.y + (toPosition.y - fromPosition.y) * transitionProgress
+
+          if (transition && transitionProgress === 1) cornerTransitions.delete(cellKey)
 
           grid
-            .roundRect(markerX, markerY, markerSize, markerSize, markerSize * 0.1)
+            .roundRect(markerX, markerY, toPosition.markerSize, toPosition.markerSize, toPosition.markerSize * 0.1)
             .fill({ color: CORNER_MARKER_COLOR })
         }
       }
+
+      for (const [cellKey, transition] of cornerTransitions) {
+        if (now - transition.startedAt >= CORNER_TRANSITION_DURATION_MS) cornerTransitions.delete(cellKey)
+      }
+      scheduleCornerAnimation()
     }
 
     function rotateCornerMarker(event: PointerEvent) {
@@ -123,10 +176,9 @@ export const SandboxCanvas = forwardRef<SandboxCanvasHandle, SandboxCanvasProps>
       const column = Math.floor((event.clientX - bounds.left - gridOffsetX) / cellSize)
       const row = Math.floor((event.clientY - bounds.top - gridOffsetY) / cellSize)
       const cellKey = `${column},${row}`
-      const currentCorner = cornerMarkers.get(cellKey)
-
-      cornerMarkers.set(cellKey, currentCorner === undefined ? CORNER_MARKER_TOP_RIGHT : (currentCorner + 1) % 4)
+      cellSystem.rotateCornerFromUser(cellKey)
       drawGrid()
+      processPendingUpdates()
     }
 
     function deleteCornerMarker(event: PointerEvent) {
@@ -135,8 +187,23 @@ export const SandboxCanvas = forwardRef<SandboxCanvasHandle, SandboxCanvasProps>
       const column = Math.floor((event.clientX - bounds.left - gridOffsetX) / cellSize)
       const row = Math.floor((event.clientY - bounds.top - gridOffsetY) / cellSize)
 
-      cornerMarkers.delete(`${column},${row}`)
+      cellSystem.removeCornerFromUser(`${column},${row}`)
       drawGrid()
+      processPendingUpdates()
+    }
+
+    function processPendingUpdates() {
+      if (updateAnimationFrame !== 0) return
+
+      function processUpdateFrame() {
+        updateAnimationFrame = 0
+        if (cellSystem.processUpdates(UPDATES_PER_FRAME) > 0) drawGrid()
+        if (cellSystem.hasPendingUpdates()) {
+          updateAnimationFrame = window.requestAnimationFrame(processUpdateFrame)
+        }
+      }
+
+      updateAnimationFrame = window.requestAnimationFrame(processUpdateFrame)
     }
 
     function resizeCanvas() {
@@ -292,7 +359,7 @@ export const SandboxCanvas = forwardRef<SandboxCanvasHandle, SandboxCanvasProps>
       captureWorldRef.current = async () => ({
         screenshot: await canvasToBlob(app.canvas),
         state: {
-          cornerMarkers: [...cornerMarkers].map(([cellKey, corner]) => ({ cellKey, corner })),
+          cornerMarkers: cellSystem.getMarkers(),
           gridOffsetX,
           gridOffsetY,
           zoom,
@@ -315,6 +382,8 @@ export const SandboxCanvas = forwardRef<SandboxCanvasHandle, SandboxCanvasProps>
       disposed = true
       resizeObserver.disconnect()
       captureWorldRef.current = null
+      if (updateAnimationFrame !== 0) window.cancelAnimationFrame(updateAnimationFrame)
+      if (cornerAnimationFrame !== 0) window.cancelAnimationFrame(cornerAnimationFrame)
       if (!initialized) return
       app.canvas.removeEventListener('pointerdown', handlePointerDown)
       app.canvas.removeEventListener('pointermove', handlePointerMove)
